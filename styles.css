@@ -1,67 +1,64 @@
-/* reset margin and set a clean sans-serif font */
+/* remove default margin, set clean modern font */
 body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    background: #f4f4f4; /* light background for contrast with map */
-  }
-  
-  /* main container for the map – takes up the full screen */
-  #map {
-    height: 100vh;
-    width: 100%;
-    position: relative; /* needed for overlaying buttons and header */
-  }
-  
-  /* fixed header bar at the top */
-  .header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background: #444; /* dark gray header */
-    color: white;
-    padding: 10px 20px;
-    font-size: 1.1rem;
-    z-index: 1000; /* make sure it sits above everything */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* slight shadow for depth */
-  }
-  
-  /* button container – positioned just under the header */
-  .controls {
-    position: absolute;
-    top: 55px;
-    left: 11px;
-    z-index: 1000;
-    display: flex;
-    gap: 10px; /* space between simplify and clear buttons */
-  }
-  
-  /* styling for the individual buttons */
-  .controls button {
-    padding: 0.5rem 1rem;
-    font-size: 0.95rem;
-    background-color: gray;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* soft shadow */
-    transition: background 0.2s; /* smooth hover effect */
-  }
-  
-  /* button hover effect */
-  .controls button:hover {
-    background-color: black;
-  }
-  
-  /* move leaflet zoom and drawing buttons lower so they don’t overlap the header */
-  .leaflet-top,
-  .leaflet-control {
-    top: 90px;
-  }
-  
-  /* tiny adjustment to spacing between drawing tool sections */
-  .leaflet-draw-section {
-    margin-top: 5px;
-  }
-  
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: #f4f4f4; 
+}
+
+/* stretch map to fill whole screen */
+#map {
+  height: 100vh;
+  width: 100%;
+  position: relative; 
+}
+
+.header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: #444;
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 1.1rem;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25); 
+}
+
+/* buttons below header – quick access controls */
+.controls {
+  position: absolute;
+  top: 58px; 
+  left: 12px;
+  display: flex;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.controls button {
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  background: #666;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: background 0.2s ease;
+}
+
+/* hover button, darkens button when hovered over */
+.controls button:hover {
+  background: #222;
+}
+
+/* shift leaflet controls down */
+.leaflet-top,
+.leaflet-control {
+  top: 90px;
+}
+
+/* extra spacing between draw tool sections */
+.leaflet-draw-section {
+  margin-top: 6px;
+}
