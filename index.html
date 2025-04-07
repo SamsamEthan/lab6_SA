@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>line simplification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- favicon that shows up in the browser tab -->
+  <link rel="icon" type="image/png" href="image.png" />
+
+  <!-- custom css file for layout and styling -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- leaflet base styles and drawing plugin -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+
+  <!-- google font for cleaner look -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- map container with header and button controls layered on top -->
+  <div id="map">
+    <div class="header">line simplification</div>
+
+    <!-- floating simplify and clear buttons -->
+    <div class="controls">
+      <button id="simplifyBtn">simplify</button>
+      <button id="clearBtn">clear</button>
+    </div>
+  </div>
+
+  <!-- leaflet core js for interactive maps -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- plugin that allows drawing shapes on the map -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+  <!-- turf.js for geometry processing like line simplification -->
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+  <script>
+    // create the map and center it on calgary
+    const map = L.map('map').setView([51.0447, -114.0719], 13);
+
+    // add openstreetmap tiles as the base map layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; openstreetmap contributors'
+    }).addTo(map);
+
+    // this group will hold the user-drawn shapes (specifically polylines here)
+    const drawnItems = new L.FeatureGroup().addTo(map);
+
+    // configure the drawing tools – we only want the polyline option
+    const drawControl = new L.Control.Draw({
+      draw: {
+        polyline: true,
+        polygon: false,
+        rectangle: false,
+        circle: false,
+        marker: false,
+        circlemarker: false
+      },
+      edit: {
+        featureGroup: drawnItems // allow editing and deleting drawn lines
+      }
+    });
+    map.addControl(drawControl);
+
+    // we’ll use this to track the simplified line so we can remove it later if needed
+    let simplifiedLine = null;
+
+    // when the user finishes drawing a line, add it to the map
+    map.on('draw:created', function (event) {
+      const layer = event.layer;
+      drawnItems.addLayer(layer);
+    });
+
+    // when simplify button is clicked, simplify the user's drawn line using turf.js
+    document.getElementById('simplifyBtn').addEventListener('click', () => {
+      if (drawnItems.getLayers().length === 0) {
+        alert("please draw a line first");
+        return;
+      }
+
+      // we assume only one line is drawn at a time
+      const originalLine = drawnItems.getLayers()[0];
+
+      // convert it to geojson format so turf.js can work with it
+      const geojson = originalLine.toGeoJSON();
+
+      // apply line simplification using turf – tweak tolerance for more/less smoothing
+      const simplified = turf.simplify(geojson, {
+        tolerance: 0.0005, // how much detail is removed
+        highQuality: true  // slower but better results
+      });
+
+      // remove any previously simplified line before adding a new one
+      if (simplifiedLine) {
+        map.removeLayer(simplifiedLine);
+      }
+
+      // draw the simplified version in green so it's easy to compare
+      simplifiedLine = L.geoJSON(simplified, {
+        style: {
+          color: 'green',
+          weight: 3
+        }
+      }).addTo(map);
+    });
+
+    // when clear button is clicked, remove both the original and simplified lines
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      drawnItems.clearLayers();
+      if (simplifiedLine) {
+        map.removeLayer(simplifiedLine);
+        simplifiedLine = null;
+      }
+    });
+  </script>
+
+</body>
+</html>
