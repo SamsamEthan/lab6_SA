@@ -2,57 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>line simplification</title>
+  <title>Line Simplification</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- favicon that shows up in the browser tab -->
-  <link rel="icon" type="image/png" href="image.png" />
-
-  <!-- custom css file for layout and styling -->
+  <link rel="icon" href="image.png" />
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- leaflet base styles and drawing plugin -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-
-  <!-- google font for cleaner look -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-  <!-- map container with header and button controls layered on top -->
   <div id="map">
-    <div class="header">line simplification</div>
-
-    <!-- floating simplify and clear buttons -->
+    <div class="header">Line Simplification</div>
     <div class="controls">
-      <button id="simplifyBtn">simplify</button>
-      <button id="clearBtn">clear</button>
+      <button id="simplifyBtn">Simplify</button>
+      <button id="clearBtn">Clear</button>
     </div>
   </div>
 
-  <!-- leaflet core js for interactive maps -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-  <!-- plugin that allows drawing shapes on the map -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-
-  <!-- turf.js for geometry processing like line simplification -->
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <script>
-    // create the map and center it on calgary
     const map = L.map('map').setView([51.0447, -114.0719], 13);
 
-    // add openstreetmap tiles as the base map layer
+    // openstreetmap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; openstreetmap contributors'
+      attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // this group will hold the user-drawn shapes (specifically polylines here)
-    const drawnItems = new L.FeatureGroup().addTo(map);
+    // layer storing user-drawn polylines
+    const originalLines = new L.FeatureGroup();
+    map.addLayer(originalLines);
 
-    // configure the drawing tools – we only want the polyline option
+    // layer for the simplified polyline
+    let simplifiedLayer = null;
+
+    // draw controls
     const drawControl = new L.Control.Draw({
       draw: {
         polyline: true,
@@ -63,61 +51,58 @@
         circlemarker: false
       },
       edit: {
-        featureGroup: drawnItems // allow editing and deleting drawn lines
+        featureGroup: originalLines
       }
     });
     map.addControl(drawControl);
 
-    // we’ll use this to track the simplified line so we can remove it later if needed
-    let simplifiedLine = null;
-
-    // when the user finishes drawing a line, add it to the map
-    map.on('draw:created', function (event) {
-      const layer = event.layer;
-      drawnItems.addLayer(layer);
+    // new drawn lines
+    map.on('draw:created', (event) => {
+      originalLines.addLayer(event.layer);
     });
 
-    // when simplify button is clicked, simplify the user's drawn line using turf.js
-    document.getElementById('simplifyBtn').addEventListener('click', () => {
-      if (drawnItems.getLayers().length === 0) {
-        alert("please draw a line first");
-        return;
+    // simplify geometry of first line
+    function simplifyLine() {
+      const layers = originalLines.getLayers();
+      if (!layers.length) {
+        return alert('Please draw a line first.');
       }
 
-      // we assume only one line is drawn at a time
-      const originalLine = drawnItems.getLayers()[0];
+      const firstLine = layers[0].toGeoJSON();
+      const tolerance = 0.0005;
 
-      // convert it to geojson format so turf.js can work with it
-      const geojson = originalLine.toGeoJSON();
-
-      // apply line simplification using turf – tweak tolerance for more/less smoothing
-      const simplified = turf.simplify(geojson, {
-        tolerance: 0.0005, // how much detail is removed
-        highQuality: true  // slower but better results
+      const simplifiedGeoJSON = turf.simplify(firstLine, {
+        tolerance,
+        highQuality: true
       });
 
-      // remove any previously simplified line before adding a new one
-      if (simplifiedLine) {
-        map.removeLayer(simplifiedLine);
+      // clear previous simplified layer
+      if (simplifiedLayer) {
+        map.removeLayer(simplifiedLayer);
       }
 
-      // draw the simplified version in green so it's easy to compare
-      simplifiedLine = L.geoJSON(simplified, {
+      // show simplified result
+      simplifiedLayer = L.geoJSON(simplifiedGeoJSON, {
         style: {
           color: 'green',
           weight: 3
         }
       }).addTo(map);
-    });
+    }
 
-    // when clear button is clicked, remove both the original and simplified lines
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      drawnItems.clearLayers();
-      if (simplifiedLine) {
-        map.removeLayer(simplifiedLine);
-        simplifiedLine = null;
+    // clear map of polylines
+    function clMap() {
+      originalLines.clearLayers();
+      if (simplifiedLayer) {
+        map.removeLayer(simplifiedLayer);
+        simplifiedLayer = null;
       }
-    });
+    }
+
+    // connect buttons to actions, simplify and clear
+    // addEventListener - js method 
+    document.getElementById('simplifyBtn').addEventListener('click', simplifyLine);
+    document.getElementById('clearBtn').addEventListener('click', clMap);
   </script>
 
 </body>
